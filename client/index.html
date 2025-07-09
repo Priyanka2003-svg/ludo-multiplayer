@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ludo Multiplayer Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            text-align: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .lobby {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"] {
+            padding: 15px;
+            font-size: 16px;
+            width: 250px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-right: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 15px 25px;
+            font-size: 16px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #gameArea {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: inline-block;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .dice-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .dice {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 3px solid #333;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            padding: 8px;
+            margin: 10px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .dice-dot {
+            width: 12px;
+            height: 12px;
+            background: #333;
+            border-radius: 50%;
+            margin: auto;
+        }
+
+        .dice-dot.hidden {
+            background: transparent;
+        }
+
+        .board-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        #board {
+            width: 600px;
+            height: 600px;
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+            gap: 1px;
+            background-color: #333;
+            border: 3px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .cell {
+            background-color: white;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .blank {
+            background-color: #e9ecef;
+        }
+
+        .white {
+            background-color: white;
+        }
+
+        .red-home {
+            background-color: #e74c3c;
+        }
+
+        .green-home {
+            background-color: #2ecc71;
+        }
+
+        .yellow-home {
+            background-color: #f1c40f;
+        }
+
+        .blue-home {
+            background-color: #3498db;
+        }
+
+        .center {
+            background: conic-gradient(
+                #e74c3c 0% 25%,
+                #2ecc71 25% 50%,
+                #3498db 50% 75%,
+                #f1c40f 75% 100%
+            );
+            border: 2px solid #333;
+        }
+
+        .safe {
+            border: 3px solid #333 !important;
+            box-sizing: border-box;
+        }
+
+        .safe::after {
+            content: '★';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 8px;
+            color: #333;
+        }
+
+        .token {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 5;
+        }
+
+        .token:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .token.active {
+            border-color: #fff;
+            border-width: 3px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+
+        .red-token {
+            background-color: #e74c3c;
+        }
+
+        .green-token {
+            background-color: #2ecc71;
+        }
+
+        .yellow-token {
+            background-color: #f1c40f;
+        }
+
+        .blue-token {
+            background-color: #3498db;
+        }
+
+        .current-player {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .player-info {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .player-card {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            min-width: 100px;
+        }
+
+        .player-card.active {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            #board {
+                width: 90vw;
+                height: 90vw;
+                max-width: 500px;
+                max-height: 500px;
+            }
+            
+            .token {
+                width: 20px;
+                height: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🎲 Ludo Multiplayer Game 🎲</h1>
+
+    <div class="lobby">
+        <input type="text" id="roomInput" placeholder="Enter Room ID" />
+        <button onclick="joinRoom()">Join Room</button>
+    </div>
+
+    <div id="gameArea" style="display:none;">
+        <div class="game-info">
+            <h2 id="status">Waiting for players...</h2>
+            <div class="current-player">
+                <strong>Current Turn:</strong> <span id="currentTurn">-</span>
+            </div>
+        </div>
+
+        <div class="dice-container">
+            <button onclick="rollDice()" id="rollButton">🎲 Roll Dice</button>
+            <div class="dice" id="dice"></div>
+            <p id="diceResult"></p>
+        </div>
+
+        <div class="board-container">
+            <div id="board"></div>
+        </div>
+
+        <div class="player-info">
+            <div class="player-card" id="player-R">
+                <div style="color: #e74c3c;">● Red</div>
+                <div>Player 1</div>
+            </div>
+            <div class="player-card" id="player-G">
+                <div style="color: #2ecc71;">● Green</div>
+                <div>Player 2</div>
+            </div>
+            <div class="player-card" id="player-B">
+                <div style="color: #3498db;">● Blue</div>
+                <div>Player 3</div>
+            </div>
+            <div class="player-card" id="player-Y">
+                <div style="color: #f1c40f;">● Yellow</div>
+                <div>Player 4</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulated socket.io for demo
+        const socket = {
+            emit: function(event, data) {
+                console.log('Emitting:', event, data);
+                // Simulate responses
+                if (event === 'joinRoom') {
+                    setTimeout(() => this.trigger('playerJoined', ['Player1', 'Player2']), 100);
+                    setTimeout(() => this.trigger('startGame', ['Player1', 'Player2']), 200);
+                }
+                if (event === 'rollDice') {
+                    const dice = Math.floor(Math.random() * 6) + 1;
+                    setTimeout(() => this.trigger('diceRolled', { player: 'You', dice }), 300);
+                }
+            },
+            on: function(event, callback) {
+                this.events = this.events || {};
+                this.events[event] = callback;
+            },
+            trigger: function(event, data) {
+                if (this.events && this.events[event]) {
+                    this.events[event](data);
+                }
+            }
+        };
+
+        let roomId = "";
+        let myId = "player1";
+        let currentPlayer = 'R';
+        let diceValue = 1;
+        let gameTokens = {};
+
+        function joinRoom() {
+            roomId = document.getElementById("roomInput").value;
+            if (!roomId) {
+                alert('Please enter a room ID');
+                return;
+            }
+            socket.emit("joinRoom", roomId);
+            document.getElementById("gameArea").style.display = "block";
+            document.querySelector('.lobby').style.display = "none";
+        }
+
+        socket.on("playerJoined", (players) => {
+            document.getElementById("status").innerText = `Players in Room: ${players.length}`;
+        });
+
+        socket.on("startGame", (players) => {
+            document.getElementById("status").innerText = "Game Started!";
+            updateCurrentPlayer();
+        });
+
+        socket.on("diceRolled", ({ player, dice }) => {
+            diceValue = dice;
+            updateDiceDisplay(dice);
+            document.getElementById("diceResult").innerText = `${player} rolled a ${dice}`;
+        });
+
+        function rollDice() {
+            socket.emit("rollDice", { roomId });
+            document.getElementById("rollButton").disabled = true;
+            setTimeout(() => {
+                document.getElementById("rollButton").disabled = false;
+            }, 1000);
+        }
+
+        function updateDiceDisplay(value) {
+            const dice = document.getElementById('dice');
+            dice.innerHTML = '';
+            
+            const diceFaces = {
+                1: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+                2: [1, 0, 0, 0, 0, 0, 0, 0, 1],
+                3: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                4: [1, 0, 1, 0, 0, 0, 1, 0, 1],
+                5: [1, 0, 1, 0, 1, 0, 1, 0, 1],
+                6: [1, 0, 1, 1, 0, 1, 1, 0, 1]
+            };
+
+            const face = diceFaces[value];
+            for (let i = 0; i < 9; i++) {
+                const dot = document.createElement('div');
+                dot.className = face[i] ? 'dice-dot' : 'dice-dot hidden';
+                dice.appendChild(dot);
+            }
+        }
+
+        function updateCurrentPlayer() {
+            document.getElementById("currentTurn").innerText = getCurrentPlayerName();
+            
+            // Update player cards
+            document.querySelectorAll('.player-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.getElementById(`player-${currentPlayer}`).classList.add('active');
+        }
+
+        function getCurrentPlayerName() {
+            const names = { 'R': 'Red', 'G': 'Green', 'B': 'Blue', 'Y': 'Yellow' };
+            return names[currentPlayer] || 'Unknown';
+        }
+
+        function createLudoBoard() {
+            const board = document.getElementById("board");
+            board.innerHTML = '';
+
+            const colorMatrix = [
+                [-1, -1, -1, -1, -1, -1, 0, 0, 0, -1, -1, -1, -1, -1, -1],
+                [-1, -1, -1, -1, -1, -1, 0, 2, 0, -1, -1, -1, -1, -1, -1],
+                [-1, -1, -1, -1, -1, -1, 0, 2, 0, -1, -1, -1, -1, -1, -1],
+                [-1, -1, -1, -1, -1, -1, 0, 2, 0, -1, -1, -1, -1, -1, -1],
+                [-1, -1, -1, -1, -1, -1, 0, 2, 0, -1, -1, -1, -1, -1, -1],
+                [-1, -1, -1, -1, -1, -1, 0, 2, 0, -1, -1, -1, -1, -1, -1],
+                [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0],
+                [0, 1, 1, 1, 1, 1, 0, 5, 0, 4, 4, 4, 4, 4, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0],
+                [-1, -1, -1, -1, -1, -1, 0, 3, 0, -1, -1, -1, -1, -1, -1],
+                [-1, -1, -1, -1, -1, -1, 0, 3, 0, -1, -1, -1, -1, -1, -1],
+                [-1, -1, -1, -1, -1, -1, 0, 3, 0, -1, -1, -1, -1, -1, -1],
+                [-1, -1, -1, -1, -1, -1, 0, 3, 0, -1, -1, -1, -1, -1, -1],
+                [-1, -1, -1, -1, -1, -1, 0, 3, 0, -1, -1, -1, -1, -1, -1],
+                [-1, -1, -1, -1, -1, -1, 0, 0, 0, -1, -1, -1, -1, -1, -1]
+            ];
+
+            const safeCells = [
+                [6, 2], [8, 1], [12, 6], [13, 8],
+                [8, 12], [6, 13], [2, 8], [1, 6]
+            ];
+
+            const initPos = {
+                R: [[1, 1], [1, 4], [4, 1], [4, 4]],
+                G: [[10, 1], [13, 1], [10, 4], [13, 4]],
+                B: [[1, 10], [4, 10], [1, 13], [4, 13]],
+                Y: [[10, 10], [10, 13], [13, 10], [13, 13]]
+            };
+
+            // Create board cells
+            for (let row = 0; row < 15; row++) {
+                for (let col = 0; col < 15; col++) {
+                    const cell = document.createElement("div");
+                    cell.classList.add("cell");
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+
+                    const val = colorMatrix[row][col];
+
+                    if (val === 0) cell.classList.add("white");
+                    else if (val === 1) cell.classList.add("red-home");
+                    else if (val === 2) cell.classList.add("green-home");
+                    else if (val === 3) cell.classList.add("yellow-home");
+                    else if (val === 4) cell.classList.add("blue-home");
+                    else if (val === 5) cell.classList.add("center");
+                    else cell.classList.add("blank");
+
+                    // Check if safe zone
+                    for (let [sr, sc] of safeCells) {
+                        if (row === sr && col === sc) {
+                            cell.classList.add("safe");
+                        }
+                    }
+
+                    board.appendChild(cell);
+                }
+            }
+
+            // Add home area tokens
+            const homeAreas = [
+                { color: 'red', positions: [[0, 0], [0, 5], [5, 0], [5, 5]] },
+                { color: 'green', positions: [[0, 9], [0, 14], [5, 9], [5, 14]] },
+                { color: 'blue', positions: [[9, 0], [9, 5], [14, 0], [14, 5]] },
+                { color: 'yellow', positions: [[9, 9], [9, 14], [14, 9], [14, 14]] }
+            ];
+
+            // Create home area backgrounds
+            homeAreas.forEach(area => {
+                const [minRow, maxRow] = [Math.min(...area.positions.map(p => p[0])), Math.max(...area.positions.map(p => p[0]))];
+                const [minCol, maxCol] = [Math.min(...area.positions.map(p => p[1])), Math.max(...area.positions.map(p => p[1]))];
+                
+                for (let row = minRow; row <= maxRow; row++) {
+                    for (let col = minCol; col <= maxCol; col++) {
+                        const index = row * 15 + col;
+                        if (board.children[index]) {
+                            board.children[index].classList.add(`${area.color}-home`);
+                        }
+                    }
+                }
+            });
+
+            // Add initial tokens
+            for (let player in initPos) {
+                gameTokens[player] = [];
+                initPos[player].forEach(([r, c], i) => {
+                    const token = createToken(player, i + 1, r, c);
+                    gameTokens[player].push(token);
+                    const index = r * 15 + c;
+                    if (board.children[index]) {
+                        board.children[index].appendChild(token);
+                    }
+                });
+            }
+
+            // Add click handlers
+            board.addEventListener('click', handleCellClick);
+        }
+
+        function createToken(player, id, row, col) {
+            const token = document.createElement('div');
+            token.classList.add('token', `${player.toLowerCase()}-token`);
+            token.dataset.player = player;
+            token.dataset.id = id;
+            token.dataset.row = row;
+            token.dataset.col = col;
+            token.title = `${player}${id}`;
+            
+            token.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (this.dataset.player === currentPlayer) {
+                    selectToken(this);
+                }
+            });
+
+            return token;
+        }
+
+        function selectToken(token) {
+            // Remove previous selections
+            document.querySelectorAll('.token').forEach(t => t.classList.remove('active'));
+            
+            // Select current token
+            token.classList.add('active');
+            console.log(`Selected token: ${token.dataset.player}${token.dataset.id}`);
+        }
+
+        function handleCellClick(e) {
+            const cell = e.target.closest('.cell');
+            if (!cell) return;
+
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+            
+            console.log(`Clicked cell: ${row}, ${col}`);
+            
+            // Handle token movement logic here
+            // This would integrate with your game logic
+        }
+
+        function nextPlayer() {
+            const players = ['R', 'G', 'B', 'Y'];
+            const currentIndex = players.indexOf(currentPlayer);
+            currentPlayer = players[(currentIndex + 1) % players.length];
+            updateCurrentPlayer();
+        }
+
+        // Initialize the game
+        window.onload = () => {
+            createLudoBoard();
+            updateDiceDisplay(1);
+            updateCurrentPlayer();
+        };
+    </script>
+</body>
+</html>
